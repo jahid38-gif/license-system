@@ -267,11 +267,15 @@ Generate Key
 <div>
 
 <a href="/toggle?toggle={{k}}&set=inactive"
-style="padding:5px 10px;background:red;color:white;border-radius:5px;">
+style="padding:5px 10px;
+background:{{'red' if s=='inactive' else '#333'}};
+color:white;border-radius:5px;">
 OFF</a>
 
 <a href="/toggle?toggle={{k}}&set=active"
-style="padding:5px 10px;background:#333;color:white;border-radius:5px;">
+style="padding:5px 10px;
+background:{{'red' if s=='active' else '#333'}};
+color:white;border-radius:5px;">
 ON</a>
 
 <a href="/delete?delete={{k}}" style="color:red;margin-left:10px;">
