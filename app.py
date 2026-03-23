@@ -1,74 +1,78 @@
-from flask import Flask, request, jsonify, render_template_string
-
-app = Flask(__name__)
-
-def load_keys():
-    with open("key.txt", "r") as f:
-        return [line.strip() for line in f.readlines()]
-
-def save_keys(keys):
-    with open("key.txt", "w") as f:
-        for key in keys:
-            f.write(key + "\n")
-
-@app.route("/")
-def home():
-    return "License Server Running"
-
-# 🔥 DASHBOARD PAGE
 @app.route("/dashboard")
 def dashboard():
     keys = load_keys()
-    return render_template_string("""
-    <h1>License Dashboard</h1>
-    <p>Total Keys: {{total}}</p>
+    total = len(keys)
 
-    <h3>Keys:</h3>
+    return render_template_string("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>License Dashboard</title>
+        <style>
+            body {
+                background: #0f172a;
+                color: white;
+                font-family: Arial;
+                padding: 20px;
+            }
+            .box {
+                padding: 20px;
+                border-radius: 10px;
+                margin: 10px;
+                display: inline-block;
+                width: 45%;
+                text-align: center;
+                font-size: 20px;
+            }
+            .red { background: linear-gradient(to right, red, orange); }
+            .green { background: linear-gradient(to right, green, lime); }
+            .blue { background: linear-gradient(to right, blue, cyan); }
+            .teal { background: linear-gradient(to right, teal, lightgreen); }
+
+            .btn {
+                display: block;
+                padding: 15px;
+                margin: 10px 0;
+                border-radius: 8px;
+                text-align: center;
+                background: #1e293b;
+                color: white;
+                text-decoration: none;
+            }
+
+            input {
+                padding: 10px;
+                width: 70%;
+            }
+
+            button {
+                padding: 10px;
+            }
+        </style>
+    </head>
+    <body>
+
+    <h1>🔥 License Dashboard</h1>
+
+    <div class="box red">0 Inactive</div>
+    <div class="box green">{{total}} Active</div>
+
+    <div class="box blue">Manage Key</div>
+    <div class="box teal">Generate Key</div>
+
+    <h2>All Keys ({{total}})</h2>
     <ul>
-    {% for key in keys %}
+        {% for key in keys %}
         <li>{{key}}</li>
-    {% endfor %}
+        {% endfor %}
     </ul>
 
     <h3>Add Key</h3>
     <form action="/add" method="post">
-        <input name="key">
-        <button type="submit">Add</button>
+        <input name="key" placeholder="Enter key">
+        <button>Add</button>
     </form>
-    """, keys=keys, total=len(keys))
 
-
-# 🔥 ADD KEY
-@app.route("/add", methods=["POST"])
-def add_key():
-    new_key = request.form.get("key")
-    keys = load_keys()
-
-    if new_key and new_key not in keys:
-        keys.append(new_key)
-        save_keys(keys)
-
-    return "Added! <a href='/dashboard'>Back</a>"
-
-
-# 🔥 CHECK API
-@app.route("/check")
-def check():
-    key = request.args.get("key")
-    keys = load_keys()
-
-    if key in keys:
-        return jsonify({"status": "valid"})
-    else:
-        return jsonify({"status": "invalid"})
-
-
-# 🔥 ALL KEYS API
-@app.route("/all")
-def all_keys():
-    keys = load_keys()
-    return jsonify({"total": len(keys), "keys": keys})
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    </body>
+    </html>
+    """, keys=keys, total=total)
