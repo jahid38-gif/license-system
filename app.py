@@ -1,130 +1,131 @@
-@app.route("/dashboard")
+from flask import Flask, request, jsonify, render_template_string
+
+app = Flask(__name__)
+
+# Load keys from file
+def load_keys():
+    try:
+        with open("key.txt", "r") as f:
+            return [line.strip() for line in f.readlines()]
+    except:
+        return []
+
+# Save keys to file
+def save_keys(keys):
+    with open("key.txt", "w") as f:
+        for key in keys:
+            f.write(key + "\n")
+
+# Home route
+@app.route("/")
+def home():
+    return "License Server Running"
+
+# Check key
+@app.route("/check")
+def check():
+    key = request.args.get("key")
+    keys = load_keys()
+
+    if key in keys:
+        return jsonify({"status": "valid"})
+    else:
+        return jsonify({"status": "invalid"})
+
+# Get all keys (API)
+@app.route("/all")
+def all_keys():
+    keys = load_keys()
+    return jsonify({"total": len(keys), "keys": keys})
+
+# Dashboard UI
+@app.route("/dashboard", methods=["GET", "POST"])
 def dashboard():
     keys = load_keys()
-    total = len(keys)
 
-    return render_template_string("""
-<!DOCTYPE html>
-<html>
-<head>
-<title>License Dashboard</title>
+    if request.method == "POST":
+        new_key = request.form.get("key")
+        if new_key and new_key not in keys:
+            keys.append(new_key)
+            save_keys(keys)
 
-<style>
-body {
-    margin: 0;
-    font-family: Arial;
-    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-    color: white;
-}
+    keys = load_keys()
 
-.container {
-    padding: 20px;
-}
+    html = """
+    <html>
+    <head>
+        <title>License Dashboard</title>
+        <style>
+            body {
+                background: linear-gradient(135deg, #0f2027, #2c5364);
+                color: white;
+                font-family: Arial;
+                text-align: center;
+            }
+            h1 { margin-top: 20px; }
+            .box {
+                display: flex;
+                justify-content: space-around;
+                margin: 20px;
+            }
+            .card {
+                padding: 20px;
+                border-radius: 10px;
+                width: 40%;
+                font-size: 20px;
+            }
+            .active { background: green; }
+            .inactive { background: red; }
 
-h1 {
-    margin-bottom: 20px;
-}
+            .btn {
+                padding: 10px 20px;
+                border: none;
+                border-radius: 5px;
+                margin-top: 10px;
+                cursor: pointer;
+            }
+            .input {
+                padding: 10px;
+                width: 200px;
+            }
+        </style>
+    </head>
+    <body>
 
-.grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-}
+        <h1>🔥 License Dashboard</h1>
 
-.card {
-    flex: 1;
-    min-width: 250px;
-    padding: 30px;
-    border-radius: 12px;
-    text-align: center;
-    font-size: 22px;
-    font-weight: bold;
-}
+        <div class="box">
+            <div class="card inactive">
+                <h2>Inactive</h2>
+                <p>0</p>
+            </div>
 
-.red {
-    background: linear-gradient(45deg, #ff416c, #ff4b2b);
-}
+            <div class="card active">
+                <h2>Active</h2>
+                <p>{{ total }}</p>
+            </div>
+        </div>
 
-.green {
-    background: linear-gradient(45deg, #00b09b, #96c93d);
-}
+        <h2>All Keys ({{ total }})</h2>
 
-.blue {
-    background: linear-gradient(45deg, #2193b0, #6dd5ed);
-}
+        <ul>
+        {% for k in keys %}
+            <li>{{ k }}</li>
+        {% endfor %}
+        </ul>
 
-.purple {
-    background: linear-gradient(45deg, #7b2ff7, #f107a3);
-}
+        <h3>Add Key</h3>
+        <form method="POST">
+            <input class="input" name="key" placeholder="Enter key" required>
+            <button class="btn" type="submit">Add</button>
+        </form>
 
-.section {
-    margin-top: 30px;
-}
+    </body>
+    </html>
+    """
 
-ul {
-    background: #111;
-    padding: 15px;
-    border-radius: 10px;
-}
+    return render_template_string(html, keys=keys, total=len(keys))
 
-li {
-    padding: 5px;
-}
 
-input {
-    padding: 10px;
-    width: 250px;
-    border-radius: 5px;
-    border: none;
-}
-
-button {
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    background: #00c6ff;
-    color: white;
-    cursor: pointer;
-}
-</style>
-
-</head>
-
-<body>
-
-<div class="container">
-
-<h1>🔥 License Dashboard</h1>
-
-<div class="grid">
-    <div class="card red">0<br>Inactive</div>
-    <div class="card green">{{total}}<br>Active</div>
-</div>
-
-<div class="grid">
-    <div class="card blue">Manage Key</div>
-    <div class="card purple">Generate Key</div>
-</div>
-
-<div class="section">
-<h2>All Keys ({{total}})</h2>
-<ul>
-{% for key in keys %}
-<li>{{key}}</li>
-{% endfor %}
-</ul>
-</div>
-
-<div class="section">
-<h3>Add Key</h3>
-<form action="/add" method="post">
-<input name="key" placeholder="Enter key">
-<button>Add</button>
-</form>
-</div>
-
-</div>
-
-</body>
-</html>
-""", keys=keys, total=total)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
