@@ -40,7 +40,11 @@ def toggle():
     new_keys = []
 
     for line in keys:
-        k, s = line.split("|")
+        parts = line.split("|")
+        if len(parts) != 2:
+            continue
+        k, s = parts
+
         if k == key:
             new_keys.append(f"{k}|{set_status}")
         else:
@@ -55,7 +59,7 @@ def delete():
     key = request.args.get("delete")
 
     keys = load_keys()
-    keys = [line for line in keys if line.split("|")[0] != key]
+    keys = [line for line in keys if "|" in line and line.split("|")[0] != key]
 
     save_keys(keys)
     return redirect("/dashboard")
@@ -66,7 +70,11 @@ def check_key(key):
     keys = load_keys()
 
     for line in keys:
-        k, s = line.split("|")
+        parts = line.split("|")
+        if len(parts) != 2:
+            continue
+        k, s = parts
+
         if k == key:
             return jsonify({
                 "key": k,
@@ -97,14 +105,19 @@ def dashboard():
     parsed = []
 
     for line in keys:
-        k, s = line.split("|")
+        parts = line.split("|")
+        if len(parts) != 2:
+            continue
+
+        k, s = parts
         parsed.append((k, s))
+
         if s == "active":
             active += 1
         else:
             inactive += 1
 
-    return render_template_string("""
+    return render_template_string(""" 
 <!DOCTYPE html>
 <html>
 <head>
