@@ -1,4 +1,52 @@
-from flask import render_template_string
+from flask import Flask, request, jsonify, render_template_string
+
+app = Flask(__name__)
+
+# 🔥 KEY STORAGE (key: status)
+keys = {
+    "JAHID_11": "active",
+    "HASAN_11": "active"
+}
+
+# ================= API =================
+
+@app.route("/get_keys")
+def get_keys():
+    return jsonify(keys)
+
+@app.route("/add_key", methods=["POST"])
+def add_key():
+    data = request.json
+    key = data.get("key")
+
+    if key:
+        keys[key] = "active"
+
+    return jsonify({"status": "ok"})
+
+@app.route("/delete_key", methods=["POST"])
+def delete_key():
+    data = request.json
+    key = data.get("key")
+
+    if key in keys:
+        del keys[key]
+
+    return jsonify({"status": "ok"})
+
+@app.route("/toggle_key", methods=["POST"])
+def toggle_key():
+    data = request.json
+    key = data.get("key")
+    status = data.get("status")
+
+    if key in keys:
+        keys[key] = status
+
+    return jsonify({"status": "ok"})
+
+
+# ================= DASHBOARD =================
 
 @app.route("/dashboard")
 def dashboard():
@@ -17,14 +65,12 @@ body{
     color:white;
 }
 
-/* TITLE */
 .title{
     text-align:center;
     font-size:28px;
     margin:20px;
 }
 
-/* GRID */
 .container{
     width:80%;
     margin:auto;
@@ -36,7 +82,6 @@ body{
     margin-bottom:20px;
 }
 
-/* CARD */
 .card{
     flex:1;
     padding:30px;
@@ -47,7 +92,6 @@ body{
     box-shadow:0 0 20px rgba(0,0,0,0.5);
 }
 
-/* COLORS */
 .red{
     background:linear-gradient(45deg,#ff416c,#ff4b2b);
 }
@@ -56,7 +100,6 @@ body{
     background:linear-gradient(45deg,#00c853,#64dd17);
 }
 
-/* BUTTON */
 .btn{
     flex:1;
     padding:15px;
@@ -80,7 +123,6 @@ body{
     color:white;
 }
 
-/* OVERLAY */
 .overlay{
     position:fixed;
     top:0;
@@ -93,7 +135,6 @@ body{
     align-items:center;
 }
 
-/* POPUP */
 .popup{
     width:500px;
     background:rgba(30,42,56,0.95);
@@ -102,7 +143,6 @@ body{
     box-shadow:0 0 30px rgba(0,0,0,0.8);
 }
 
-/* KEY ROW */
 .key-row{
     display:flex;
     justify-content:space-between;
@@ -113,7 +153,6 @@ body{
     border-radius:8px;
 }
 
-/* SMALL BTN */
 .small{
     padding:5px 10px;
     margin-left:5px;
@@ -145,11 +184,11 @@ input{
 
     <div class="row">
         <div class="card red">
-            Inactive<br>0
+            Inactive<br><span id="inactive">0</span>
         </div>
 
         <div class="card green">
-            Active<br><span id="total">0</span>
+            Active<br><span id="active">0</span>
         </div>
     </div>
 
@@ -173,7 +212,7 @@ input{
 <div class="overlay" id="add">
     <div class="popup">
         <h2>Add Key</h2>
-        <input id="key">
+        <input id="key" placeholder="Enter key">
         <button onclick="addKey()">Add</button>
         <button onclick="closeAll()">Close</button>
     </div>
@@ -185,34 +224,55 @@ function load(){
     fetch("/get_keys")
     .then(r=>r.json())
     .then(d=>{
-        document.getElementById("total").innerText=d.length
-
+        let active=0
+        let inactive=0
         let html=""
-        d.forEach(k=>{
+
+        for(let k in d){
+
+            if(d[k]=="active") active++
+            else inactive++
+
             html+=`
             <div class="key-row">
-                <span>${k}</span>
+                <span>${k} → ${d[k]}</span>
                 <div>
-                    <button class="small on">ON</button>
-                    <button class="small off">OFF</button>
-                    <button class="small delete" onclick="del('${k}')">Delete</button>
+                    <button class="small on" onclick="setStatus('${k}','active')">ON</button>
+                    <button class="small off" onclick="setStatus('${k}','inactive')">OFF</button>
+                    <button class="small delete" onclick="delKey('${k}')">Delete</button>
                 </div>
             </div>`
-        })
+        }
 
         document.getElementById("list").innerHTML=html
+        document.getElementById("active").innerText=active
+        document.getElementById("inactive").innerText=inactive
     })
 }
 
 function addKey(){
     let k=document.getElementById("key").value
-    fetch("/add_key",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:k})})
-    .then(()=>{load();closeAll()})
+    fetch("/add_key",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({key:k})
+    }).then(()=>{load();closeAll()})
 }
 
-function del(k){
-    fetch("/delete_key",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:k})})
-    .then(()=>load())
+function delKey(k){
+    fetch("/delete_key",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({key:k})
+    }).then(()=>load())
+}
+
+function setStatus(k,status){
+    fetch("/toggle_key",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({key:k,status:status})
+    }).then(()=>load())
 }
 
 function openManage(){
@@ -236,3 +296,9 @@ load()
 </body>
 </html>
 """)
+
+
+# ================= RUN =================
+
+if __name__ == "__main__":
+    app.run(debug=True)
