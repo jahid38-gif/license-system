@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, render_template_string
+from flask import Flask, request, redirect, render_template_string, jsonify
 import os
 
 app = Flask(__name__)
@@ -15,6 +15,11 @@ def load_keys():
 def save_keys(keys):
     with open(FILE, "w") as f:
         f.write("\n".join(keys))
+
+# ================= ROOT FIX =================
+@app.route("/")
+def home():
+    return redirect("/dashboard")
 
 # ================= ADD =================
 @app.route("/add", methods=["POST"])
@@ -54,6 +59,31 @@ def delete():
 
     save_keys(keys)
     return redirect("/dashboard")
+
+# ================= CHECK API =================
+@app.route("/check/<key>")
+def check_key(key):
+    keys = load_keys()
+
+    for line in keys:
+        k, s = line.split("|")
+        if k == key:
+            return jsonify({
+                "key": k,
+                "status": s,
+                "valid": True if s == "active" else False
+            })
+
+    return jsonify({
+        "key": key,
+        "status": "not_found",
+        "valid": False
+    })
+
+# ================= SERVER CHECK =================
+@app.route("/ping")
+def ping():
+    return jsonify({"status": "server running"})
 
 # ================= DASHBOARD =================
 @app.route("/dashboard")
