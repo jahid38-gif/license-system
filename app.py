@@ -47,42 +47,88 @@ def dashboard():
 <html>
 <head>
 <title>Dashboard</title>
+
 <style>
+
 body {
+    margin:0;
+    font-family:Arial;
     background: linear-gradient(135deg,#0f2027,#2c5364);
     color:white;
-    font-family:Arial;
-    text-align:center;
 }
 
-.box {display:flex;justify-content:space-around;margin:20px;}
-.card {padding:30px;border-radius:10px;width:40%;}
-.red{background:red;}
-.green{background:green;}
+/* HEADER */
+h1 {
+    text-align:center;
+    margin:20px;
+}
+
+/* BOX */
+.container {
+    width:80%;
+    margin:auto;
+}
+
+.row {
+    display:flex;
+    gap:20px;
+    margin-bottom:20px;
+}
+
+.card {
+    flex:1;
+    padding:30px;
+    border-radius:12px;
+    text-align:center;
+    font-size:20px;
+    font-weight:bold;
+}
+
+.red { background:#ff3b3b; }
+.green { background:#2ecc71; }
 
 .btn {
+    flex:1;
     padding:15px;
-    width:40%;
-    margin:10px;
     border:none;
     border-radius:10px;
-    cursor:pointer;
     font-size:18px;
+    cursor:pointer;
 }
 
-.manage{background:lime;}
-.generate{background:blue;color:white;}
+.manage { background:#7bed9f; }
+.generate { background:#3498db; color:white; }
+
+/* POPUP */
+.overlay {
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.6);
+    display:none;
+    justify-content:center;
+    align-items:center;
+}
 
 .popup {
-    display:none;
-    position:fixed;
-    top:50%;
-    left:50%;
-    transform:translate(-50%,-50%);
     background:#1e2a38;
     padding:20px;
-    border-radius:10px;
-    width:60%;
+    border-radius:12px;
+    width:500px;
+}
+
+/* KEY ROW */
+.key-row {
+    display:flex;
+    justify-content:space-between;
+    margin:10px 0;
+}
+
+button.small {
+    padding:5px 10px;
+    margin-left:5px;
 }
 
 </style>
@@ -92,34 +138,42 @@ body {
 
 <h1>🔥 License Dashboard</h1>
 
-<div class="box">
-    <div class="card red">
-        <h2>Inactive</h2>
-        <p>0</p>
+<div class="container">
+
+    <div class="row">
+        <div class="card red">
+            Inactive <br> 0
+        </div>
+
+        <div class="card green">
+            Active <br> <span id="total">0</span>
+        </div>
     </div>
 
-    <div class="card green">
-        <h2>Active</h2>
-        <p id="total">0</p>
+    <div class="row">
+        <button class="btn manage" onclick="openManage()">Manage Key</button>
+        <button class="btn generate" onclick="openAdd()">Generate Key</button>
     </div>
+
 </div>
 
-<button class="btn manage" onclick="openManage()">Manage Key</button>
-<button class="btn generate" onclick="openAdd()">Generate Key</button>
-
 <!-- MANAGE POPUP -->
-<div class="popup" id="manageBox">
-    <h2>Manage Keys</h2>
-    <div id="keyList"></div>
-    <button onclick="closeAll()">Close</button>
+<div class="overlay" id="manageBox">
+    <div class="popup">
+        <h2>Manage Keys</h2>
+        <div id="keyList"></div>
+        <button onclick="closeAll()">Close</button>
+    </div>
 </div>
 
 <!-- ADD POPUP -->
-<div class="popup" id="addBox">
-    <h2>Add Key</h2>
-    <input id="newKey">
-    <button onclick="addKey()">Add</button>
-    <button onclick="closeAll()">Close</button>
+<div class="overlay" id="addBox">
+    <div class="popup">
+        <h2>Add Key</h2>
+        <input id="newKey">
+        <button onclick="addKey()">Add</button>
+        <button onclick="closeAll()">Close</button>
+    </div>
 </div>
 
 <script>
@@ -133,10 +187,14 @@ function loadKeys(){
         let html=""
         data.forEach(k=>{
             html += `
-            <p>
-                ${k}
-                <button onclick="deleteKey('${k}')">Delete</button>
-            </p>`
+            <div class="key-row">
+                <span>${k}</span>
+                <div>
+                    <button class="small">ON</button>
+                    <button class="small">OFF</button>
+                    <button class="small" onclick="deleteKey('${k}')">Delete</button>
+                </div>
+            </div>`
         })
 
         document.getElementById("keyList").innerHTML = html
@@ -161,12 +219,12 @@ function deleteKey(k){
 }
 
 function openManage(){
-    document.getElementById("manageBox").style.display="block"
+    document.getElementById("manageBox").style.display="flex"
     loadKeys()
 }
 
 function openAdd(){
-    document.getElementById("addBox").style.display="block"
+    document.getElementById("addBox").style.display="flex"
 }
 
 function closeAll(){
