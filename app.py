@@ -2,8 +2,11 @@ from flask import Flask, request, redirect, render_template_string, jsonify, ses
 import os
 
 app = Flask(__name__)
-app.secret_key = "secret123"   # 🔐 change this
-PASSWORD = "admin123"          # 🔐 change this
+app.secret_key = "secret123"
+
+# 🔐 LOGIN (PHP STYLE)
+USERNAME = "Jahid"
+PASSWORD = "@Jahid.Hasan20034#"
 
 FILE = "keys.txt"
 
@@ -21,20 +24,89 @@ def save_keys(keys):
 # ================= LOGIN =================
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    error = ""
+
     if request.method == "POST":
+        user = request.form.get("username")
         pw = request.form.get("password")
 
-        if pw == PASSWORD:
+        if user == USERNAME and pw == PASSWORD:
             session["logged_in"] = True
             return redirect("/dashboard")
+        else:
+            error = "Wrong Login!"
 
-    return """
-    <form method="POST" style="text-align:center;margin-top:100px;">
-        <h2>🔐 Enter Password</h2>
-        <input type="password" name="password" style="padding:10px;"><br><br>
-        <button type="submit">Login</button>
-    </form>
-    """
+    return render_template_string("""
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login</title>
+
+<style>
+body{
+    background:#0f172a;
+    color:white;
+    font-family:Arial;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    margin:0;
+}
+
+.box{
+    background:#1e293b;
+    padding:40px;
+    border-radius:15px;
+    text-align:center;
+    width:350px;
+    box-shadow:0 0 30px rgba(0,0,0,0.5);
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin:10px 0;
+    border:none;
+    border-radius:8px;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    background:#22c55e;
+    border:none;
+    color:white;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.error{
+    color:red;
+    margin-top:10px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="box">
+<h2>🔐 Admin Login</h2>
+
+<form method="POST">
+<input type="text" name="username" placeholder="Username">
+<input type="password" name="password" placeholder="Password">
+<button>Login</button>
+</form>
+
+<p class="error">{{error}}</p>
+
+</div>
+
+</body>
+</html>
+""", error=error)
 
 # ================= LOGOUT =================
 @app.route("/logout")
