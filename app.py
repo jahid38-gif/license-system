@@ -1,7 +1,9 @@
-from flask import Flask, request, redirect, render_template_string, jsonify
+from flask import Flask, request, redirect, render_template_string, jsonify, session
 import os
 
 app = Flask(__name__)
+app.secret_key = "secret123"   # 🔐 change this
+PASSWORD = "admin123"          # 🔐 change this
 
 FILE = "keys.txt"
 
@@ -15,6 +17,30 @@ def load_keys():
 def save_keys(keys):
     with open(FILE, "w") as f:
         f.write("\n".join(keys))
+
+# ================= LOGIN =================
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        pw = request.form.get("password")
+
+        if pw == PASSWORD:
+            session["logged_in"] = True
+            return redirect("/dashboard")
+
+    return """
+    <form method="POST" style="text-align:center;margin-top:100px;">
+        <h2>🔐 Enter Password</h2>
+        <input type="password" name="password" style="padding:10px;"><br><br>
+        <button type="submit">Login</button>
+    </form>
+    """
+
+# ================= LOGOUT =================
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
 
 # ================= ROOT FIX =================
 @app.route("/")
@@ -97,6 +123,10 @@ def ping():
 @app.route("/dashboard")
 def dashboard():
 
+    # 🔐 SECURITY CHECK
+    if not session.get("logged_in"):
+        return redirect("/login")
+
     keys = load_keys()
 
     active = 0
@@ -130,20 +160,17 @@ body{
     color:white;
     padding:30px;
 }
-
 .top{
     display:flex;
     justify-content:space-between;
     align-items:center;
     margin-bottom:30px;
 }
-
 .grid{
     display:grid;
     grid-template-columns:1fr 1fr;
     gap:25px;
 }
-
 .box{
     padding:50px;
     border-radius:20px;
@@ -151,15 +178,12 @@ body{
     font-size:35px;
     font-weight:bold;
 }
-
 .red{background:#ef4444;}
 .green{background:#22c55e;}
-
 .cyan{
     grid-column:1/3;
     background:linear-gradient(90deg,#06b6d4,#14b8a6);
 }
-
 .btn-box{
     padding:30px;
     border-radius:15px;
@@ -168,10 +192,8 @@ body{
     cursor:pointer;
     text-align:center;
 }
-
 .yellow{background:#84cc16;}
 .blue{background:#3b82f6;}
-
 .popup{
     display:none;
     position:fixed;
@@ -181,7 +203,6 @@ body{
     height:100%;
     background:rgba(0,0,0,0.7);
 }
-
 .popup-content{
     background:#1e293b;
     margin:5% auto;
@@ -189,12 +210,10 @@ body{
     width:50%;
     border-radius:15px;
 }
-
 .scroll-box{
     max-height:400px;
     overflow-y:auto;
 }
-
 .key-row{
     background:#0f172a;
     padding:12px;
@@ -203,18 +222,25 @@ body{
     display:flex;
     justify-content:space-between;
 }
-
 .close{
     float:right;
     color:red;
     cursor:pointer;
     font-size:22px;
 }
+.logout{
+    position:absolute;
+    top:20px;
+    right:30px;
+    color:white;
+    text-decoration:none;
+}
 </style>
-
 </head>
 
 <body>
+
+<a href="/logout" class="logout">Logout</a>
 
 <div class="top">
 <h1>🔥 License Dashboard</h1>
