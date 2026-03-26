@@ -167,6 +167,15 @@ def delete():
 def check_key(key):
 
     device = request.args.get("device")  # 🔥 NEW
+
+    # 🔥 BLOCK OLD VERSION
+    if not device:
+        return jsonify({
+            "key": key,
+            "status": "update_required",
+            "valid": False
+        })
+
     keys = load_keys()
 
     new_keys = []
@@ -197,11 +206,12 @@ def check_key(key):
             # 🔥 first time bind
             if saved_device == "":
                 new_line = f"{k}|{s}|{device}"
-                
+
                 for l in keys:
                     if l.startswith(k + "|"):
                         continue
                     new_keys.append(l)
+
                 new_keys.append(new_line)
 
                 save_keys(new_keys)
@@ -228,6 +238,7 @@ def check_key(key):
                     "valid": False
                 })
 
+    # ❌ not found
     return jsonify({
         "key": key,
         "status": "not_found",
