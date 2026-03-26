@@ -165,20 +165,68 @@ def delete():
 # ================= CHECK API =================
 @app.route("/check/<key>")
 def check_key(key):
+
+    device = request.args.get("device")  # 🔥 NEW
     keys = load_keys()
+
+    new_keys = []
+    found = False
 
     for line in keys:
         parts = line.split("|")
-        if len(parts) != 2:
+
+        if len(parts) < 2:
             continue
-        k, s = parts
+
+        k = parts[0]
+        s = parts[1]
+
+        saved_device = parts[2] if len(parts) >= 3 else ""
 
         if k == key:
-            return jsonify({
-                "key": k,
-                "status": s,
-                "valid": True if s == "active" else False
-            })
+            found = True
+
+            # ❌ inactive
+            if s != "active":
+                return jsonify({
+                    "key": k,
+                    "status": s,
+                    "valid": False
+                })
+
+            # 🔥 first time bind
+            if saved_device == "":
+                new_line = f"{k}|{s}|{device}"
+                
+                for l in keys:
+                    if l.startswith(k + "|"):
+                        continue
+                    new_keys.append(l)
+                new_keys.append(new_line)
+
+                save_keys(new_keys)
+
+                return jsonify({
+                    "key": k,
+                    "status": "active",
+                    "valid": True
+                })
+
+            # ✅ same device
+            if saved_device == device:
+                return jsonify({
+                    "key": k,
+                    "status": "active",
+                    "valid": True
+                })
+
+            # ❌ other device
+            else:
+                return jsonify({
+                    "key": k,
+                    "status": "used_on_other_device",
+                    "valid": False
+                })
 
     return jsonify({
         "key": key,
