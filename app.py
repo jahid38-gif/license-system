@@ -246,6 +246,7 @@ def check_key(key):
     })
 # ================= PING =================
 @app.route("/heartbeat")
+@app.route("/ping")
 def heartbeat():
     import time
 
