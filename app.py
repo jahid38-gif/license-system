@@ -10,16 +10,21 @@ PASSWORD = "@Jahid.Hasan20034#"
 
 FILE = "keys.txt"
 
-# ================= LOAD =================
-def load_keys():
-    if not os.path.exists(FILE):
-        return []
-    with open(FILE, "r") as f:
-        return [line.strip() for line in f.readlines() if "|" in line]
+# ================= LOAD (GITHUB) =================
+import requests
 
+GITHUB_RAW = "https://raw.githubusercontent.com/jahid38-gif/license-system/main/key.txt"
+
+def load_keys():
+    try:
+        r = requests.get(GITHUB_RAW)
+        return [line.strip() for line in r.text.splitlines() if "|" in line]
+    except:
+        return []
+
+# ================= SAVE (DISABLED) =================
 def save_keys(keys):
-    with open(FILE, "w") as f:
-        f.write("\n".join(keys))
+    pass
 
 # ================= LOGIN =================
 @app.route("/login", methods=["GET", "POST"])
