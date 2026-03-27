@@ -125,7 +125,7 @@ def add():
     key = request.form.get("new_key", "").strip().upper()
     if key:
         with open(FILE, "a") as f:
-            f.write(f"{key}|active\n")
+            f.write(f"{key}|active||0\n")
     return redirect("/dashboard")
 
 # ================= TOGGLE =================
@@ -139,7 +139,7 @@ def toggle():
 
     for line in keys:
         parts = line.split("|")
-        if len(parts) != 2:
+        if len(parts) < 2:
             continue
         k, s = parts
 
@@ -195,7 +195,12 @@ def check_key(key):
         s = parts[1]
 
         saved_device = parts[2] if len(parts) >= 3 else ""
-        last_time = int(parts[3]) if len(parts) >= 4 else 0
+
+        # ✅ SAFE TIME PARSE (FIX)
+        try:
+            last_time = int(parts[3])
+        except:
+            last_time = 0
 
         if k == key:
             found = True
