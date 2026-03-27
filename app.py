@@ -245,10 +245,10 @@ def check_key(key):
         "valid": False
     })
 # ================= PING =================
-@app.route("/ping")
-def ping():
-
+@app.route("/heartbeat")
+def heartbeat():
     import time
+
     device = request.args.get("device")
     key = request.args.get("key")
 
