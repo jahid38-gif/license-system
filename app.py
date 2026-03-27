@@ -253,8 +253,9 @@ def heartbeat():
     device = request.args.get("device")
     key = request.args.get("key")
 
+    # 🔥 ping call (server alive check)
     if not device or not key:
-        return jsonify({"status": "error"})
+        return jsonify({"status": "running"})
 
     keys = load_keys()
     new_keys = []
@@ -271,10 +272,13 @@ def heartbeat():
         s = parts[1]
 
         saved_device = parts[2] if len(parts) >= 3 else ""
+        last_time = int(parts[3]) if len(parts) >= 4 else 0
 
+        # ✅ same key + same device → update time
         if k == key and saved_device == device:
             new_line = f"{k}|{s}|{device}|{current_time}"
             new_keys.append(new_line)
+
         else:
             new_keys.append(line)
 
@@ -518,11 +522,6 @@ function closeAdd(){ document.getElementById("addPopup").style.display="none"; }
 </body>
 </html>
 """, keys=parsed, active=active, inactive=inactive, total=len(parsed))
-
-# ================= PING =================
-@app.route("/ping")
-def ping():
-    return jsonify({"status": "ok"})
 
 # ================= RUN =================
 if __name__ == "__main__":
