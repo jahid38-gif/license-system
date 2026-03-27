@@ -272,10 +272,42 @@ def check_key(key):
         "status": "not_found",
         "valid": False
     })
-# ================= SERVER CHECK =================
+# ================= PING =================
 @app.route("/ping")
 def ping():
-    return jsonify({"status": "server running"})
+
+    import time
+    device = request.args.get("device")
+    key = request.args.get("key")
+
+    if not device or not key:
+        return jsonify({"status": "error"})
+
+    keys = load_keys()
+    new_keys = []
+
+    current_time = int(time.time())
+
+    for line in keys:
+        parts = line.split("|")
+
+        if len(parts) < 2:
+            continue
+
+        k = parts[0]
+        s = parts[1]
+
+        saved_device = parts[2] if len(parts) >= 3 else ""
+
+        if k == key and saved_device == device:
+            new_line = f"{k}|{s}|{device}|{current_time}"
+            new_keys.append(new_line)
+        else:
+            new_keys.append(line)
+
+    save_keys(new_keys)
+
+    return jsonify({"status": "ok"})
 
 # ================= DASHBOARD =================
 @app.route("/dashboard")
