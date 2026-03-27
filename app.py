@@ -178,10 +178,12 @@ def check_key(key):
         })
 
     keys = load_keys()
-    new_keys = []
 
     current_time = int(time.time())
-    TIMEOUT = 60  # 🔥 60 sec idle timeout
+    TIMEOUT = 60
+
+    updated_keys = []
+    found = False
 
     for line in keys:
         parts = line.split("|")
@@ -196,6 +198,7 @@ def check_key(key):
         last_time = int(parts[3]) if len(parts) >= 4 else 0
 
         if k == key:
+            found = True
 
             # ❌ inactive
             if s != "active":
@@ -205,67 +208,36 @@ def check_key(key):
                     "valid": False
                 })
 
-            # 🔥 FIRST TIME USE
+            # 🔥 FIRST TIME
             if saved_device == "":
-                new_line = f"{k}|{s}|{device}|{current_time}"
-
-                for l in keys:
-                    if l.startswith(k + "|"):
-                        continue
-                    new_keys.append(l)
-
-                new_keys.append(new_line)
-                save_keys(new_keys)
-
-                return jsonify({
-                    "key": k,
-                    "status": "active",
-                    "valid": True
-                })
+                updated_keys.append(f"{k}|{s}|{device}|{current_time}")
 
             # ✅ SAME DEVICE
-            if saved_device == device:
-                new_line = f"{k}|{s}|{device}|{current_time}"
+            elif saved_device == device:
+                updated_keys.append(f"{k}|{s}|{device}|{current_time}")
 
-                for l in keys:
-                    if l.startswith(k + "|"):
-                        continue
-                    new_keys.append(l)
-
-                new_keys.append(new_line)
-                save_keys(new_keys)
-
-                return jsonify({
-                    "key": k,
-                    "status": "active",
-                    "valid": True
-                })
-
-            # 🔥 DIFFERENT DEVICE
-            if current_time - last_time < TIMEOUT:
+            # 🔥 OTHER DEVICE RUNNING
+            elif current_time - last_time < TIMEOUT:
                 return jsonify({
                     "key": k,
                     "status": "already_running_on_other_device",
                     "valid": False
                 })
 
-            # 🔁 SWITCH DEVICE (OLD CLOSED)
+            # 🔁 SWITCH DEVICE
             else:
-                new_line = f"{k}|{s}|{device}|{current_time}"
+                updated_keys.append(f"{k}|{s}|{device}|{current_time}")
 
-                for l in keys:
-                    if l.startswith(k + "|"):
-                        continue
-                    new_keys.append(l)
+        else:
+            updated_keys.append(line)
 
-                new_keys.append(new_line)
-                save_keys(new_keys)
-
-                return jsonify({
-                    "key": k,
-                    "status": "active",
-                    "valid": True
-                })
+    if found:
+        save_keys(updated_keys)
+        return jsonify({
+            "key": key,
+            "status": "active",
+            "valid": True
+        })
 
     return jsonify({
         "key": key,
