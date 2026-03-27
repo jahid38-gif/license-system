@@ -11,20 +11,15 @@ PASSWORD = "@Jahid.Hasan20034#"
 FILE = "keys.txt"
 
 # ================= LOAD (GITHUB) =================
-import requests
-
-GITHUB_RAW = "https://raw.githubusercontent.com/jahid38-gif/license-system/main/key.txt"
-
 def load_keys():
-    try:
-        r = requests.get(GITHUB_RAW)
-        return [line.strip() for line in r.text.splitlines() if "|" in line]
-    except:
+    if not os.path.exists(FILE):
         return []
+    with open(FILE, "r") as f:
+        return [line.strip() for line in f.readlines() if "|" in line]
 
-# ================= SAVE (DISABLED) =================
 def save_keys(keys):
-    pass
+    with open(FILE, "w") as f:
+        f.write("\n".join(keys))
 
 # ================= LOGIN =================
 @app.route("/login", methods=["GET", "POST"])
@@ -303,10 +298,14 @@ def dashboard():
 
     for line in keys:
         parts = line.split("|")
-        if len(parts) != 2:
+
+        # 🔥 minimum 2 part check
+        if len(parts) < 2:
             continue
 
-        k, s = parts
+        k = parts[0]
+        s = parts[1]
+
         parsed.append((k, s))
 
         if s == "active":
@@ -519,6 +518,10 @@ function closeAdd(){ document.getElementById("addPopup").style.display="none"; }
 </html>
 """, keys=parsed, active=active, inactive=inactive, total=len(parsed))
 
+# ================= PING =================
+@app.route("/ping")
+def ping():
+    return jsonify({"status": "ok"})
 
 # ================= RUN =================
 if __name__ == "__main__":
