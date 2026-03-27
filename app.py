@@ -166,7 +166,8 @@ def delete():
 @app.route("/check/<key>")
 def check_key(key):
 
-    device = request.args.get("device")  # 🔥 NEW
+    import time
+    device = request.args.get("device")
 
     # 🔥 BLOCK OLD VERSION
     if not device:
@@ -177,9 +178,10 @@ def check_key(key):
         })
 
     keys = load_keys()
-
     new_keys = []
-    found = False
+
+    current_time = int(time.time())
+    TIMEOUT = 60  # 🔥 60 sec idle timeout
 
     for line in keys:
         parts = line.split("|")
@@ -191,9 +193,9 @@ def check_key(key):
         s = parts[1]
 
         saved_device = parts[2] if len(parts) >= 3 else ""
+        last_time = int(parts[3]) if len(parts) >= 4 else 0
 
         if k == key:
-            found = True
 
             # ❌ inactive
             if s != "active":
@@ -203,9 +205,9 @@ def check_key(key):
                     "valid": False
                 })
 
-            # 🔥 first time bind
+            # 🔥 FIRST TIME USE
             if saved_device == "":
-                new_line = f"{k}|{s}|{device}"
+                new_line = f"{k}|{s}|{device}|{current_time}"
 
                 for l in keys:
                     if l.startswith(k + "|"):
@@ -213,7 +215,6 @@ def check_key(key):
                     new_keys.append(l)
 
                 new_keys.append(new_line)
-
                 save_keys(new_keys)
 
                 return jsonify({
@@ -222,29 +223,55 @@ def check_key(key):
                     "valid": True
                 })
 
-            # ✅ same device
+            # ✅ SAME DEVICE
             if saved_device == device:
+                new_line = f"{k}|{s}|{device}|{current_time}"
+
+                for l in keys:
+                    if l.startswith(k + "|"):
+                        continue
+                    new_keys.append(l)
+
+                new_keys.append(new_line)
+                save_keys(new_keys)
+
                 return jsonify({
                     "key": k,
                     "status": "active",
                     "valid": True
                 })
 
-            # ❌ other device
-            else:
+            # 🔥 DIFFERENT DEVICE
+            if current_time - last_time < TIMEOUT:
                 return jsonify({
                     "key": k,
-                    "status": "used_on_other_device",
+                    "status": "already_running_on_other_device",
                     "valid": False
                 })
 
-    # ❌ not found
+            # 🔁 SWITCH DEVICE (OLD CLOSED)
+            else:
+                new_line = f"{k}|{s}|{device}|{current_time}"
+
+                for l in keys:
+                    if l.startswith(k + "|"):
+                        continue
+                    new_keys.append(l)
+
+                new_keys.append(new_line)
+                save_keys(new_keys)
+
+                return jsonify({
+                    "key": k,
+                    "status": "active",
+                    "valid": True
+                })
+
     return jsonify({
         "key": key,
         "status": "not_found",
         "valid": False
     })
-
 # ================= SERVER CHECK =================
 @app.route("/ping")
 def ping():
