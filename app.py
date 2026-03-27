@@ -139,18 +139,23 @@ def toggle():
 
     for line in keys:
         parts = line.split("|")
+
         if len(parts) < 2:
             continue
-        k, s = parts
+
+        k = parts[0]
+        s = parts[1]
+
+        saved_device = parts[2] if len(parts) >= 3 else ""
+        last_time = parts[3] if len(parts) >= 4 else "0"
 
         if k == key:
-            new_keys.append(f"{k}|{set_status}")
+            new_keys.append(f"{k}|{set_status}|{saved_device}|{last_time}")
         else:
             new_keys.append(line)
 
     save_keys(new_keys)
     return redirect("/dashboard")
-
 # ================= DELETE =================
 @app.route("/delete")
 def delete():
@@ -277,7 +282,12 @@ def heartbeat():
         s = parts[1]
 
         saved_device = parts[2] if len(parts) >= 3 else ""
-        last_time = int(parts[3]) if len(parts) >= 4 else 0
+
+        # ✅ SAFE TIME PARSE (FINAL FIX)
+        try:
+            last_time = int(parts[3])
+        except:
+            last_time = 0
 
         # ✅ same key + same device → update time
         if k == key and saved_device == device:
