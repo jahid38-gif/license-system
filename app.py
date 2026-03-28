@@ -123,9 +123,21 @@ def home():
 @app.route("/add", methods=["POST"])
 def add():
     key = request.form.get("new_key", "").strip().upper()
-    if key:
-        with open(FILE, "a") as f:
-            f.write(f"{key}|active||0\n")
+
+    if not key:
+        return redirect("/dashboard")
+
+    keys = load_keys()
+
+    # 🔥 duplicate check
+    for line in keys:
+        if line.split("|")[0] == key:
+            return redirect("/dashboard")
+
+    # 🔥 save new key
+    keys.append(f"{key}|active||0")
+    save_keys(keys)
+
     return redirect("/dashboard")
 
 # ================= TOGGLE =================
